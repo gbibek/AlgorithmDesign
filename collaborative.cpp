@@ -75,15 +75,21 @@ double paper_predict(const table my_table,const vector<int> predict_this_user,in
         }
     }
     my_avg = my_avg/count;
+    cout<<"my_avg = "<<my_avg<<endl;
     
     for (int j = 0; j < my_table.size(); j++) {
-        if(my_table[j][location_of_vote_to_figure_out]>0){
+        if(my_table[j][location_of_vote_to_figure_out]>0 && predict_this_user != my_table[j] ){
             simi = similarity(predict_this_user, my_table[j], size);
             k = k + abs(simi);
             avg_of_each_i = cal_avg(my_table[j],predict_this_user);
-            numerator = numerator + simi*(my_table[j][location_of_vote_to_figure_out]);
+            cout<<"sim= " <<simi <<",average= "<<avg_of_each_i<<",";
+            numerator = numerator + simi*(my_table[j][location_of_vote_to_figure_out]-avg_of_each_i);
+            cout<< "numerator= "<<numerator<<",";
+            cout<<"j= "<<my_table[j][location_of_vote_to_figure_out]<<endl;
         }
+        
     }
+    cout<<"numerator = "<<numerator<<endl;
     return (my_avg + (numerator/k));
 }
 
