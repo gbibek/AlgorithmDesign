@@ -15,40 +15,49 @@
 #include <cmath>
 #include <sstream>
 #include <iomanip>
+#include <unistd.h>
 
 using namespace std;
 
-struct item_rating{
-    
+struct ItemRating{
+    int user;
     int item;
     int rating;
 };
 
 
-typedef vector<item_rating> Row;
+typedef vector<ItemRating> Row;
 typedef vector<Row> table;
 
 vector<int> parsing(string);
 void print(const table);
-int count_votes(vector<int>);
 
 
-void paper_predict_all(const table my_table, int active_user,
-                       int active_users_item_to_predict_vote );
-double simi_avg_simi(const vector<int> active_user,const vector<int> compare_to_user);
 
-double cal_simi_avg(const vector<item_rating> compute_this_table,const vector<item_rating> compare_this_table);
-double cal_avg(const vector<item_rating>);
+double PredictionEq1(const table MyTable, int ActiveUser,
+                       int PredictVoteOfItem );
+double SimiCorrelation(const vector<ItemRating> ActiveUser,const vector<ItemRating> CompareToUser);
+double CalAvg(const vector<ItemRating>);
+double CalSimiAvg(const vector<ItemRating>,const vector<ItemRating>);
+int HasItemAt(const table MyTable, int User,
+                   int Item);
+
 
 int main(int argc, const char * argv[])
 {
     string line;
-    table my_table;
+    table MyTable;
     ifstream myfile ("/Users/lsu/Documents/workspace/netflix_collaboration/netflix_collaboration/u1base.txt");
-    item_rating obj;
-    vector<int> dummy;
-    int current_user = 1;
-    Row my_row;
+    ItemRating obj;
+    int ActiveUser , PredictVoteOfItem = 0;
+    vector<int> Dummy;
+    double PredictedVote = 0.0;
+    int CurrentUser = 1; // since in the file user starts from 1
+    Row MyRow;
+    
+    cout<<"Enter user and item number sperating them by space : "<<endl;
+    cin>>ActiveUser>>PredictVoteOfItem;
+    ActiveUser = ActiveUser-1;
     cout<<"Begin .. "<<endl;
     
     if (myfile.is_open()){
@@ -57,31 +66,33 @@ int main(int argc, const char * argv[])
             if(parsing(line).size() > 0)
             {
                 
-                dummy = parsing(line);
-                if (current_user == dummy[0]) {
-                    obj.item = dummy[1];
-                    obj.rating = dummy[2];
-                    my_row.push_back(obj);
+                Dummy = parsing(line);
+                if (CurrentUser == Dummy[0]) {
+                    obj.user = Dummy[0];
+                    obj.item = Dummy[1];
+                    obj.rating = Dummy[2];
+                    MyRow.push_back(obj);
                 }
                 else{
-                    my_table.push_back(my_row);
-                    current_user = dummy[0];
-                    my_row.clear();
-                    obj.item = dummy[1];
-                    obj.rating = dummy[2];
-                    my_row.push_back(obj);
+                    MyTable.push_back(MyRow);
+                    CurrentUser = Dummy[0];
+                    MyRow.clear();
+                    obj.user = Dummy[0];
+                    obj.item = Dummy[1];
+                    obj.rating = Dummy[2];
+                    MyRow.push_back(obj);
                     // cout<< " "<<dummy[0]<<endl;
                 }
-                
             }
-            
         }
-        my_table.push_back(my_row);
+        MyTable.push_back(MyRow);
         myfile.close();
     }else{
         cout << "Unable to open file";
     }
     //print(my_table);
+    PredictedVote = PredictionEq1(MyTable, ActiveUser, PredictVoteOfItem );
+    cout << "Prediction of vote for user " << MyTable[ActiveUser][0].user << " of item " <<PredictVoteOfItem << " = "<<PredictedVote <<endl;
     
     return 0;
 }
@@ -92,11 +103,10 @@ vector<int> parsing(string each_line){
     vector<int> my_row;
     int count = 0;
     
-    for(int i = 0; i < each_line.length(); i++){
+    for(int i = 0; i <= each_line.length(); i++){
         if(isdigit(each_line[i]) && count <= 3){
             dummy += each_line[i];
         }else{
-            
             if(isdigit(dummy[0]) && count <= 3){
                 my_row.push_back(atoi(dummy.c_str()));
                 count++;
@@ -111,40 +121,131 @@ void print(table my_table){
     cout<<" the size of my_table = "<<my_table.size()<<endl;
     
     for (int i = 0 ; i < my_table.size(); i++) {
-        cout<<"user "<<i+1<<"  = ";
         for(int j = 0; j < my_table[i].size(); j++){
-            cout<<"(" <<my_table[i][j].item<< "),(" << my_table[i][j].rating<< ")   ";
+            cout<<"user = "<<my_table[i][j].user<<", item = " <<my_table[i][j].item<< " , raing = " << my_table[i][j].rating<< "  "<<endl;
         }
-        cout<<endl;
+        cout<<" next user "<<endl;
     }
 }
-double simi_avg_simi(const vector<item_rating> active_user,const vector<item_rating> compare_to_user){
+
+double PredictionEq1(const table MyTable, int ActiveUser,
+                       int PredictVoteOfItem ){
     
-    double avg_of_active_user  = cal_avg(active_user);
-    double avg_of_compare_user = cal_avg(compare_to_user);
+    double k = 0.0;
+    double simi = 0.0;
+    double numerator = 0.0;
+    double avg_of_each_comparing_user = 0.0;
+    int similar_item;
+    for (int i = 0; i < MyTable.size(); i++) {
+        
+        similar_item = HasItemAt(MyTable,i,PredictVoteOfItem);
+        if(i != (MyTable[ActiveUser][0].user-1) && (similar_item >= 0)){
+            
+            simi = SimiCorrelation(MyTable[ActiveUser], MyTable[i]);
+            k = k + abs(simi);
+            avg_of_each_comparing_user = CalSimiAvg(MyTable[i],MyTable[ActiveUser]);
+            numerator = numerator + simi*(MyTable[i][similar_item].rating -
+                                   avg_of_each_comparing_user);
+
+        }
+    }
+    
+    return (CalAvg(MyTable[ActiveUser])+ numerator/k);
+    
+}
+/*
+ returns if the index where the specificific item resides
+ else return -1 to indicate that there is no such item 
+ in the array
+ */
+
+int HasItemAt(const table MyTable,int User,
+                   int Item){
+    int i = 0;
+    bool has_it = false;
+    
+    while ((Item) >= MyTable[User][i].item && MyTable[User].size()>i) {
+        if((Item) == MyTable[User][i].item ){
+            has_it = true;
+            i++;
+        }
+        else i++;
+    }
+    if(has_it == true){
+        return i-1;
+    }
+    else return -1;
+}
+
+double SimiCorrelation(const vector<ItemRating> ActiveUser,const vector<ItemRating> CompareToUser){
+    
+    double AvgOfActiveUser  = CalSimiAvg(ActiveUser, CompareToUser);
+    double AvgOfCompareUser = CalSimiAvg(CompareToUser, ActiveUser);
+   
     double numerator    = 0.0;
     double denominator1 = 0.0;
     double denominator2 = 0.0;
     int j = 0;
-    for (int i = 0; i < active_user.size() || i < compare_to_user.size() ; i++) {
-        
-        if(active_user[i].item == compare_to_user[j].item){
+    int i = 0;
+    int tmp;
+   
+    while( (i < ActiveUser.size()) && (j < CompareToUser.size())){
+        if(ActiveUser[i].item == CompareToUser[j].item ){
+            
+            numerator = numerator+((ActiveUser[i].rating-AvgOfActiveUser)*(CompareToUser[j].rating-AvgOfCompareUser));
+            denominator1  = denominator1 + ((ActiveUser[i].rating-AvgOfActiveUser)*(ActiveUser[i].rating-AvgOfActiveUser));
+            denominator2  = denominator2 + ((CompareToUser[j].rating-AvgOfCompareUser)*(CompareToUser[j].rating-AvgOfCompareUser));
+            }
+        tmp = j;
+        if(ActiveUser[i].item >= CompareToUser[tmp].item){
             j++;
-            numerator = numerator+((active_user[i].rating-avg_of_active_user)*(compare_to_user[j].rating-avg_of_compare_user));
-            denominator1  = denominator1 + ((active_user[i].rating-avg_of_active_user)*(active_user[i].rating-avg_of_active_user));
-            denominator2  = denominator2 + ((compare_to_user[j].rating-avg_of_compare_user)*(compare_to_user[j].rating-avg_of_compare_user));
         }
+        if(ActiveUser[i].item <= CompareToUser[tmp].item){
+            i++;
+        }
+        
     }
-    
-    return (numerator/sqrt(denominator1*denominator2));
+    if(denominator1 == 0 || denominator2 == 0){
+        return  0;
+    }
+    else return (numerator/sqrt(denominator1*denominator2));
 }
 
 
-double cal_avg(const vector<item_rating> row_of_item){
+double CalAvg(const vector<ItemRating> row_of_item){
     
     double sum = 0.0;
     for (int i = 0; i < row_of_item.size(); i++) {
         sum = sum + row_of_item[i].rating;
     }
     return sum/row_of_item.size();
+}
+
+double CalSimiAvg(const vector<ItemRating> active_user, const vector<ItemRating> compare_user){
+    
+    int i = 0;
+    int j = 0;
+    double sum = 0.0;
+    double count = 0;
+    int tmp;
+    
+    while ((active_user.size() > i) && (compare_user.size() > j) ) {
+        if(active_user[i].item == compare_user[j].item){
+            count++;
+            sum = sum + active_user[i].rating;
+        }
+        tmp = j;
+        if(active_user[i].item >= compare_user[tmp].item){
+            j++;
+        }
+        if(active_user[i].item <= compare_user[tmp].item){
+            i++;
+        }
+    }
+    if(count == 0){
+        return 0;
+    }
+    else{
+        return sum/count;
+    }
 }
