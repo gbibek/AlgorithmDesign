@@ -12,7 +12,7 @@
 #include <vector>
 #include <string>
 #include <math.h>
-#include <cmath>
+#include <cmath> 
 #include <sstream>
 #include <iomanip>
 #include <unistd.h>
@@ -54,6 +54,7 @@ int main(int argc, const char * argv[])
     double PredictedVote = 0.0;
     int CurrentUser = 1; // since in the file user starts from 1
     Row MyRow;
+    clock_t start;
     
     cout<<"Enter user and item number sperating them by space : "<<endl;
     cin>>ActiveUser>>PredictVoteOfItem;
@@ -91,9 +92,10 @@ int main(int argc, const char * argv[])
         cout << "Unable to open file";
     }
     //print(my_table);
+    start = std::clock();
     PredictedVote = PredictionEq1(MyTable, ActiveUser, PredictVoteOfItem );
     cout << "Prediction of vote for user " << MyTable[ActiveUser][0].user << " of item " <<PredictVoteOfItem << " = "<<PredictedVote <<endl;
-    
+    cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) << "  sec" << std::endl;
     return 0;
 }
 vector<int> parsing(string each_line){
