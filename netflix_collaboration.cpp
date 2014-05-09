@@ -171,7 +171,7 @@ double root_mean_square(table BaseTable, table TestTable){
             predicted_value = PredictionEq1(BaseTable, TestTable[i][j].user, TestTable[i][j].item);
             cout<<" predicted vote for user "<< TestTable[i][j].user << " and item "<<TestTable[i][j].item<<"  = "<<predicted_value<<endl;
             actual_value    = TestTable[i][j].rating;
-            MSSE            = (pow((actual_value - predicted_value), 2));
+            MSSE            = MSSE + (pow((actual_value - predicted_value), 2));
             count++;
         }
     }
