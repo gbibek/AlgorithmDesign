@@ -7,7 +7,6 @@
 //
 
 
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -25,7 +24,7 @@ struct ItemRating{
     int item;
     int rating;
     int totalsum;
-
+    
 };
 
 
@@ -45,7 +44,8 @@ double root_mean_square(table BaseTable, table TestTable);
 void CalTotalItemRatingOfAll(table& BaseTable);
 void CalTotalSimiRatingOfAll(table BaseTable,vector<vector<double>>&);
 int getSizeOfItemsUserRated(vector<ItemRating> ItemsOfUser);
-
+int ModifiedHasItemAt(const table MyTable, int User,
+              int Item);
 
 int main(int argc, const char * argv[])
 {
@@ -148,7 +148,9 @@ table Filling_Table(table BaseTable,string filepath){
 /* 
  * This function prints the file out
  */
- 
+
+
+
 void print(table my_table){
     cout<<" the size of my_table = "<<my_table.size()<<endl;
     
@@ -192,12 +194,14 @@ double PredictionEq1(const table BaseTable, int ActiveUser,
     int similar_item = -1;
     int TrackSimi = 0;
     double AvgOfActiveUser = 0.0;
+    //clock_t start;
     //cout<<"BaseTable Size  = "<<BaseTable.size()<<endl;
     AvgOfActiveUser = (double)BaseTable[ActiveUser-1][0].totalsum/(double)BaseTable[ActiveUser-1].size();
     //cout<<"AvgOfActiveUser = "<<AvgOfActiveUser<<endl;
     for (int i = 0; i < BaseTable.size(); i++) {
-        
-        similar_item = HasItemAt(BaseTable,i,PredictVoteOfItem);
+        //start = std::clock();
+        similar_item = ModifiedHasItemAt(BaseTable,i,PredictVoteOfItem);
+        //cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) << "  sec" << std::endl;
         //cout<<"similar_item = "<<similar_item<<"   "<<endl;
         if(i != (ActiveUser-1) && (similar_item < 0)) { TrackSimi++;}
         if(i != (ActiveUser-1) && (similar_item >= 0)){ // ActiveUser-1 because i start from 0
@@ -240,6 +244,27 @@ void CalTotalSimiRatingOfAll(table BaseTable, vector<vector<double>>& HoldSimiAv
         simi.clear();
     }
 
+}
+
+int ModifiedHasItemAt(const table MyTable, int User,
+              int Item)
+{
+    //cout<<"Inside  Modified0"<<endl;
+    int mid,left = 0;
+    int right = (int)MyTable[User].size();
+    while (left < right) {
+        mid = left + (right-left)/2;
+        if (Item > MyTable[User][mid].item) {
+            left = mid + 1;
+        }
+        else if (Item < MyTable[User][mid].item){
+            right = mid;
+        }
+        else{
+            return mid;
+        }
+    }
+    return -1;
 }
 
 /*
