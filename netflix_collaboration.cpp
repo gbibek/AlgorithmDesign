@@ -17,6 +17,7 @@
 #include <sstream>
 #include <iomanip>
 #include <unistd.h>
+#include <map>
 
 using namespace std;
 
@@ -25,10 +26,11 @@ struct ItemRating{
     int item;
     int rating;
     int totalsum;
+    string key;
     
 };
 
-
+map<string,int> Map;
 typedef vector<ItemRating> Row;
 typedef vector<Row> table;
 vector<vector<double>> HoldSimiAvg;
@@ -40,13 +42,14 @@ double SimiCorrelation(const vector<ItemRating> ActiveUser,const vector<ItemRati
 double CalSimiAvg(const vector<ItemRating>,const vector<ItemRating>);
 int HasItemAt(const table MyTable, int User,
                    int Item);
-table Filling_Table(table,string);
+table Filling_Table(table,string,string);
 double root_mean_square(table BaseTable, table TestTable);
 void CalTotalItemRatingOfAll(table& BaseTable);
 void CalTotalSimiRatingOfAll(table BaseTable,vector<vector<double>>&);
 int getSizeOfItemsUserRated(vector<ItemRating> ItemsOfUser);
 int ModifiedHasItemAt(const table MyTable, int User,
               int Item);
+void modifiedprint(table my_table);
 
 int main(int argc, const char * argv[])
 {
@@ -57,12 +60,15 @@ int main(int argc, const char * argv[])
     clock_t start;
     double MSSE = 0.0;
     
-    BaseTable = Filling_Table(BaseTable,"/Users/bghimire/workspace/neflix_prediction_algorithm/neflix_prediction_algorithm/u1base.txt");
-    TestTable = Filling_Table(TestTable,"/Users/bghimire/workspace/neflix_prediction_algorithm/neflix_prediction_algorithm/u1test.txt");
+    BaseTable = Filling_Table(BaseTable,"/Users/lsu/Documents/workspace/NetflixPredictionAlgorithm/NetflixPredictionAlgorithm/u1base.txt","base");
+    TestTable = Filling_Table(TestTable,"/Users/lsu/Documents/workspace/NetflixPredictionAlgorithm/NetflixPredictionAlgorithm/u1test.txt","test");
+    cout<<"STARING"<<endl;
     CalTotalItemRatingOfAll(BaseTable );
     CalTotalSimiRatingOfAll(BaseTable, HoldSimiAvg);
     cout<<"Begin .. "<<endl;
     //print(BaseTable);
+    //cout<<"------------------"<<endl;
+    //modifiedprint(BaseTable);
     
     start = std::clock();
     MSSE  = root_mean_square(BaseTable, TestTable);
@@ -103,7 +109,7 @@ vector<int> parsing(string each_line){
  * This function reads the file and fills the Table
  *
  */
-table Filling_Table(table BaseTable,string filepath){
+table Filling_Table(table BaseTable,string filepath,string type){
     
     ifstream myfile (filepath);
     vector<int> Dummy;
@@ -111,6 +117,8 @@ table Filling_Table(table BaseTable,string filepath){
     Row MyRow;
     string line;
     ItemRating obj;
+    string I = "I";
+    
     
     if (myfile.is_open()){
         while ( getline (myfile,line))
@@ -123,6 +131,12 @@ table Filling_Table(table BaseTable,string filepath){
                     obj.user = Dummy[0];
                     obj.item = Dummy[1];
                     obj.rating = Dummy[2];
+                    if(type == "base"){
+                        obj.key    = I.append(to_string(obj.user)).append("-").append(to_string(obj.item));
+                        Map[obj.key] = (int)MyRow.size()+1;
+                        I.clear();
+                        I = "I";
+                    }
                     MyRow.push_back(obj);
                 }
                 else{
@@ -132,11 +146,18 @@ table Filling_Table(table BaseTable,string filepath){
                     obj.user = Dummy[0];
                     obj.item = Dummy[1];
                     obj.rating = Dummy[2];
+                    if(type == "base"){
+                        obj.key    = I.append(to_string(obj.user)).append("-").append(to_string(obj.item));
+                        Map[obj.key] = (int)MyRow.size()+1;
+                        I.clear();
+                        I = "I";
+                    }
                     MyRow.push_back(obj);
                     // cout<< " "<<dummy[0]<<endl;
                 }
             }
         }
+        
         BaseTable.push_back(MyRow);
         myfile.close();
     }else{
@@ -146,7 +167,22 @@ table Filling_Table(table BaseTable,string filepath){
     return BaseTable;
 }
 
-/* 
+void modifiedprint(table my_table){
+    
+    string key = "I";
+    for (int i = 0 ; i < my_table.size(); i++) {
+        for(int j = 0; j < my_table[i].size(); j++){
+            key.append(to_string(i+1)).append("-").append(to_string(j+1));
+            cout<<key<<" = ";
+            cout<<Map[key]<<endl;
+            key.clear();
+            key = "I";
+   
+        }
+    }
+}
+
+/*
  * This function prints the file out
  */
 
@@ -157,7 +193,7 @@ void print(table my_table){
     
     for (int i = 0 ; i < my_table.size(); i++) {
         for(int j = 0; j < my_table[i].size(); j++){
-            cout<<"user = "<<my_table[i][j].user<<", item = " <<my_table[i][j].item<< " , raing = " << my_table[i][j].rating<< "  "<<endl;
+            cout<<"user = "<<my_table[i][j].user<<", item = " <<my_table[i][j].item<< " , raing = " << my_table[i][j].rating<< "  "<< ", key = "<<my_table[i][j].key <<",value = "<<Map[my_table[i][j].key]<<endl;
         }
         cout<<" next user "<<endl;
     }
@@ -169,9 +205,12 @@ double root_mean_square(table BaseTable, table TestTable){
     double predicted_value = 0.0;
     double MSSE            = 0.0;
     int count              = 0;
+    //clock_t start;
     for (int i = 0; i < TestTable.size(); i++){
         for (int j = 0; j<TestTable[i].size(); j++) {
+            //start = std::clock();
             predicted_value = PredictionEq1(BaseTable, TestTable[i][j].user, TestTable[i][j].item);
+            //cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) << "  sec" << std::endl;
             cout<<" predicted vote for user "<< TestTable[i][j].user << " and item "<<TestTable[i][j].item<<"  = "<<predicted_value<<endl;
             actual_value    = TestTable[i][j].rating;
             MSSE            = MSSE + (pow((actual_value - predicted_value), 2));
@@ -195,25 +234,31 @@ double PredictionEq1(const table BaseTable, int ActiveUser,
     int similar_item = -1;
     int TrackSimi = 0;
     double AvgOfActiveUser = 0.0;
+    string key = "I";
     //clock_t start;
     //cout<<"BaseTable Size  = "<<BaseTable.size()<<endl;
     AvgOfActiveUser = (double)BaseTable[ActiveUser-1][0].totalsum/(double)BaseTable[ActiveUser-1].size();
     //cout<<"AvgOfActiveUser = "<<AvgOfActiveUser<<endl;
     for (int i = 0; i < BaseTable.size(); i++) {
         //start = std::clock();
-        similar_item = ModifiedHasItemAt(BaseTable,i,PredictVoteOfItem);
+        //similar_item = ModifiedHasItemAt(BaseTable,i,PredictVoteOfItem);
+        key.append(to_string(i+1)).append("-").append(to_string(PredictVoteOfItem));
+        similar_item  = Map[key];
+        //cout<<"calculate simi of "<<key<< " = " <<similar_item<<endl;
+        key.clear();
+        key = "I";
         //cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) << "  sec" << std::endl;
         //cout<<"similar_item = "<<similar_item<<"   "<<endl;
-        if(i != (ActiveUser-1) && (similar_item < 0)) { TrackSimi++;}
-        if(i != (ActiveUser-1) && (similar_item >= 0)){ // ActiveUser-1 because i start from 0
+        if(i != (ActiveUser-1) && (similar_item == 0)) { TrackSimi++;}
+        if(i != (ActiveUser-1) && (similar_item > 0)){ // ActiveUser-1 because i start from 0
             //cout<<"("<<(ActiveUser-1)<<","<<TrackSimi<<")"<<endl;
             simi = HoldSimiAvg[ActiveUser-1][TrackSimi];//= SimiCorrelation(BaseTable[ActiveUser-1], BaseTable[i]);
             k = k + abs(simi);
             //cout<<"For user                   =  "<<BaseTable[i][similar_item].user<<endl;
-            AvgOfEachComparingUser = (double)(BaseTable[i][0].totalsum - BaseTable[i][similar_item].rating)/(double)(getSizeOfItemsUserRated(BaseTable[i])-1);
+            AvgOfEachComparingUser = (double)(BaseTable[i][0].totalsum - BaseTable[i][similar_item-1].rating)/(double)(getSizeOfItemsUserRated(BaseTable[i])-1);
             //cout<<"First term and second term =  "<<BaseTable[i][similar_item].rating<<" - "<<AvgOfEachComparingUser<<endl;
             //cout<<"simi                       =  "<<simi<<endl;
-            numerator = numerator + simi*(BaseTable[i][similar_item].rating -
+            numerator = numerator + simi*(BaseTable[i][similar_item-1].rating -
                                           AvgOfEachComparingUser);
             
             TrackSimi++;
@@ -221,6 +266,7 @@ double PredictionEq1(const table BaseTable, int ActiveUser,
         
         
     }
+    if(k==0) return 0;
     
     return (AvgOfActiveUser+ numerator/k);
     
