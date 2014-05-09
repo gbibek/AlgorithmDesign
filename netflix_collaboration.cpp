@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include <map>
+#include <unordered_map>
 
 using namespace std;
 
@@ -30,7 +31,7 @@ struct ItemRating{
     
 };
 
-map<string,int> Map;
+unordered_map<string,int> Map;
 typedef vector<ItemRating> Row;
 typedef vector<Row> table;
 vector<vector<double>> HoldSimiAvg;
@@ -47,7 +48,7 @@ double CalSimiAvg(const vector<ItemRating>,const vector<ItemRating>);
 int HasItemAt(const table MyTable, int User,
                    int Item);
 table Filling_Table(table,string,string);
-double root_mean_square(table BaseTable, table TestTable);
+double root_mean_square(table BaseTable, table TestTable,int i); // i means which function eq1 or eq2 or regression
 void CalTotalItemRatingOfAll(table& BaseTable);
 void CalTotalSimiRatingOfAll(table BaseTable,vector<vector<double>>&);
 int getSizeOfItemsUserRated(vector<ItemRating> ItemsOfUser);
@@ -63,30 +64,34 @@ int main(int argc, const char * argv[])
     Row MyRow;
     clock_t start;
     double MSSE = 0.0;
-    
     BaseTable = Filling_Table(BaseTable,
                               "/Users/bghimire/workspace/neflix_prediction_algorithm/neflix_prediction_algorithm/u1base.txt","base");
     TestTable = Filling_Table(TestTable,
                               "/Users/bghimire/workspace/neflix_prediction_algorithm/neflix_prediction_algorithm/u1test.txt","test");
-    cout<<"STARING"<<endl;
+    cout << "STARING"<< endl;
     start = std::clock();
     CalTotalItemRatingOfAll(BaseTable );
     CalTotalSimiRatingOfAll(BaseTable, HoldSimiAvg);
-    cout<<"Begin .. "<<endl;
+    cout << "Begin .. " << endl;
     //print(BaseTable);
-    //cout<<"------------------"<<endl;
+    cout << " Time to load into vector " << endl;
+    cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) <<
+    "  sec or " << ((std::clock() - start) / (double)(CLOCKS_PER_SEC ))/60 << " min " << endl;
     
-    //modifiedprint(BaseTable);
+    MSSE  = root_mean_square(BaseTable, TestTable,1);
+    cout << " Equation 1,  Total Mean sum of square Error = " << MSSE << endl;
+    cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) <<
+    "  sec or " << ((std::clock() - start) / (double)(CLOCKS_PER_SEC ))/60 << " min " << endl;
+    cout<<"-------------------------------------------------------"<<endl;
+    start = std::clock();
+    MSSE  = root_mean_square(BaseTable, TestTable,2);
+    cout << " Equation 2, Total Mean sum of square Error = " << MSSE << endl;
+    cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) <<
+    "  sec or " << ((std::clock() - start) / (double)(CLOCKS_PER_SEC ))/60 << " min "<< endl;
     
-    
-    MSSE  = root_mean_square(BaseTable, TestTable);
-    cout << " Total Mean sum of square Error = " << MSSE << endl;
-    cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) << "  sec or " <<((std::clock() - start) / (double)(CLOCKS_PER_SEC ))/60<<" min "<< std::endl;
     
     return 0;
 }
-
-
 /*
  * This function parse the data from the file the first colum 
  * is the user column, the second colum is the item column and the
@@ -126,21 +131,19 @@ table Filling_Table(table BaseTable,string filepath,string type){
     string line;
     ItemRating obj;
     string I = "I";
-    
-    
     if (myfile.is_open()){
-        while ( getline (myfile,line))
+        while (getline(myfile,line))
         {
             if(parsing(line).size() > 0)
             {
-                
                 Dummy = parsing(line);
                 if (CurrentUser == Dummy[0]) {
                     obj.user = Dummy[0];
                     obj.item = Dummy[1];
                     obj.rating = Dummy[2];
                     if(type == "base"){
-                        obj.key    = I.append(to_string(obj.user)).append("-").append(to_string(obj.item));
+                        obj.key    = I.append(to_string(obj.user)).
+                        append("-").append(to_string(obj.item));
                         Map[obj.key] = (int)MyRow.size()+1;
                         I.clear();
                         I = "I";
@@ -155,23 +158,21 @@ table Filling_Table(table BaseTable,string filepath,string type){
                     obj.item = Dummy[1];
                     obj.rating = Dummy[2];
                     if(type == "base"){
-                        obj.key    = I.append(to_string(obj.user)).append("-").append(to_string(obj.item));
+                        obj.key = I.append(to_string(obj.user)).append("-").
+                        append(to_string(obj.item));
                         Map[obj.key] = (int)MyRow.size()+1;
                         I.clear();
                         I = "I";
                     }
                     MyRow.push_back(obj);
-                    // cout<< " "<<dummy[0]<<endl;
                 }
             }
         }
-        
         BaseTable.push_back(MyRow);
         myfile.close();
     }else{
         cout << "Unable to open file";
     }
-
     return BaseTable;
 }
 
@@ -185,11 +186,10 @@ void modifiedprint(table my_table){
     for (int i = 0 ; i < my_table.size(); i++) {
         for(int j = 0; j < TotalItem; j++){
             key.append(to_string(i+1)).append("-").append(to_string(j+1));
-            cout<<key<<" = ";
-            cout<<Map[key]<<endl;
+            cout << key << " = ";
+            cout << Map[key] << endl;
             key.clear();
             key = "I";
-   
         }
     }
 }
@@ -201,15 +201,15 @@ void modifiedprint(table my_table){
 
 
 void print(table my_table){
-    cout<<" the size of my_table = "<<my_table.size()<<endl;
+    cout<<" the size of my_table = " << my_table.size() << endl;
     
     for (int i = 0 ; i < my_table.size(); i++) {
         for(int j = 0; j < my_table[i].size(); j++){
-            cout<<"user = "<<my_table[i][j].user<<", item = " <<my_table[i][j].item<<
-            " , raing = " << my_table[i][j].rating<< "  "<< ", key = "<<my_table[i][j].key <<
-            ",value = "<<Map[my_table[i][j].key]<<endl;
+            cout << "user = " << my_table[i][j].user << ", item = " << my_table[i][j].item <<
+            " , raing = " << my_table[i][j].rating<< "  " << ", key = "<< my_table[i][j].key <<
+            ",value = " << Map[my_table[i][j].key] << endl;
         }
-        cout<<" next user "<<endl;
+        cout << " next user " << endl;
     }
 }
 
@@ -219,18 +219,20 @@ void print(table my_table){
  *
  */
 
-double root_mean_square(table BaseTable, table TestTable){
+double root_mean_square(table BaseTable, table TestTable, int eqType){
     
     double actual_value    = 0.0;
     double predicted_value = 0.0;
     double MSSE            = 0.0;
     int count              = 0;
-    //clock_t start;
     for (int i = 0; i < TestTable.size(); i++){
         for (int j = 0; j<TestTable[i].size(); j++) {
-            //start = std::clock();
-            predicted_value = PredictionEq2(BaseTable, TestTable[i][j].user, TestTable[i][j].item);
-            //cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC ) << "  sec" << std::endl;
+            if (eqType == 1){
+                predicted_value = PredictionEq1(BaseTable, TestTable[i][j].user, TestTable[i][j].item);
+            }
+            else if( eqType == 2){
+                predicted_value = PredictionEq2(BaseTable, TestTable[i][j].user, TestTable[i][j].item);
+            }
             //cout<<" predicted vote for user "<< TestTable[i][j].user <<
             //" and item "<<TestTable[i][j].item<<"  = "<<predicted_value<<endl;
             actual_value    = TestTable[i][j].rating;
@@ -238,7 +240,6 @@ double root_mean_square(table BaseTable, table TestTable){
             count++;
         }
     }
-    
     return (MSSE/count);
 }
 
@@ -247,7 +248,6 @@ double root_mean_square(table BaseTable, table TestTable){
  */
 double PredictionEq1(const table BaseTable, int ActiveUser,
                        int PredictVoteOfItem){
-    
     double k = 0.0;
     double simi = 0.0;
     double numerator = 0.0;
@@ -264,25 +264,19 @@ double PredictionEq1(const table BaseTable, int ActiveUser,
         key = "I";
         if(i != (ActiveUser-1) && (similar_item == 0)) { TrackSimi++;}
         if(i != (ActiveUser-1) && (similar_item > 0)){ // ActiveUser-1 because i start from 0
-            //cout<<"("<<(ActiveUser-1)<<","<<TrackSimi<<")"<<endl;
-            simi = HoldSimiAvg[ActiveUser-1][TrackSimi];//= SimiCorrelation(BaseTable[ActiveUser-1], BaseTable[i]);
+            simi = HoldSimiAvg[ActiveUser-1][TrackSimi];
             k = k + abs(simi);
             AvgOfEachComparingUser = (double)(BaseTable[i][0].totalsum - BaseTable[i]
                                               [similar_item-1].rating)/(double)(getSizeOfItemsUserRated(BaseTable[i])-1);
             numerator = numerator + simi*(BaseTable[i][similar_item-1].rating -
                                           AvgOfEachComparingUser);
-            
             TrackSimi++;
         }
-        
-        
     }
     if(k==0) return 0;
     
     return (AvgOfActiveUser+ numerator/k);
-    
 }
-
 
 /* This function predicts the rating of the user using
  * eq2 modified eq of class
@@ -311,15 +305,14 @@ double PredictionEq2(const table BaseTable, int ActiveUser,
             AvgOfEachComparingUser = (double)(BaseTable[i][0].totalsum)/(double)(getSizeOfItemsUserRated(BaseTable[i]));
             numerator = numerator + simi*(BaseTable[i][similar_item-1].rating -
                                           AvgOfEachComparingUser);
-            
             TrackSimi++;
         }
-        
-        
     }
-    if(k==0) return 0;
+    if(k == 0) return 0;
     
-    return ((double)BaseTable[ActiveUser-1][0].totalsum+ ((numerator/k)*(double)BaseTable[ActiveUser-1].size()))/((double)BaseTable[ActiveUser-1].size()-1);
+    return ( ((double)BaseTable[ActiveUser-1][0].totalsum +
+             ((numerator/k)*(double)BaseTable[ActiveUser-1].size()))/
+            ((double)BaseTable[ActiveUser-1].size() - 1) );
     
 }
 
@@ -355,7 +348,6 @@ void CalTotalSimiRatingOfAll(table BaseTable, vector<vector<double>>& HoldSimiAv
 int ModifiedHasItemAt(const table MyTable, int User,
               int Item)
 {
-    //cout<<"Inside  Modified0"<<endl;
     int mid,left = 0;
     int right = (int)MyTable[User].size();
     while (left < right) {
@@ -479,15 +471,14 @@ void CalTotalItemRatingOfAll(table& BaseTable){
     double sum = 0.0;
     for (int i = 0; i < BaseTable.size(); i++) {
         for (int j = 0; j < BaseTable[i].size(); j++) {
-            //cout<<"Inside CaltotalItemRatingOfAll of user "<<i<<"
-            //and item "<<j<<" rating  = "<<BaseTable[i][j].rating<<endl;
+            
             sum = sum + BaseTable[i][j].rating;
         }
         BaseTable[i][0].totalsum = sum;
-        //cout << "Total sum = "<<sum<<endl;
+        
         sum = 0;
     }
-    //return sum;
+    
 }
 
 
