@@ -1,6 +1,4 @@
-//
-//  main.cpp
-//  netflix_collaboration
+
 //
 //  
 //  Copyright (c) 2014 Bibek Ghimire.  All rights reserved.
