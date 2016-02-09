@@ -1,2 +1,7 @@
 
 Contains example of algortims in C++
+
+1) NetflixColaboration - Sample data of Netflix users (100k) are used to predict the movie new user of existing user might like. I use correlation coefficient for this. If coefficient between two use is 1 then it means two users are highly likely to have same test in movies.
+
+2)Sorting algorithm - Different sorting algorithm is used here.
+                    a) Quicksort
