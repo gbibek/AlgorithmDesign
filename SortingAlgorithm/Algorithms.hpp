@@ -62,10 +62,35 @@ public:
 };
 
 class InsertionSort: public Algorithm{
+
+    std::vector<int> &my_array;
+    int length;
+
 public:
-    virtual void sort(){
-        std::cout << "Doing Insertion sort now " << std::endl;
+    
+    InsertionSort(std::vector<int> &array):my_array(array){
+        length = (int)my_array.size();
     }
+    virtual void sort(){
+        i_sort();
+    }
+    
+    void swap(int a, int b){
+        int tmp = my_array[a];
+        my_array[a] = my_array[b];
+        my_array[b]  = tmp;
+    }
+    void i_sort(){
+        int j;
+        for (int i = 1; i < length; i++) {
+            j = i;
+            while ((j > 0) && (my_array[j-1] > my_array[j])) {
+               swap(j-1, j);
+                j--;
+            }
+        }
+    }
+
 };
 
 #endif /* Algorithms_hpp */
