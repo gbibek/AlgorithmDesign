@@ -25,21 +25,24 @@ public:
 int main(int argc, const char * argv[]) {
     int number;
     size_t n=20;
-    std::cout << "Size of array = " << n <<std::endl;
     std::vector<int> my_array;
+    Sort qobj;
     srand((unsigned)time(0));
-    
+   
+    std::cout << "Size of array = " << n <<std::endl;
     for(int i = 0; i < n; i++){
         number =(rand()%(n)) + 1;
         my_array.push_back(number);
     }
     
-    Sort qobj;
+    std::cout << "**** Doing QuickSort ****"  << std::endl; 
     qobj.sort(new QuickSort(my_array));
     for (int i = 0; i < n; i++) {
         std::cout << "my_array[" << i << "] = " << my_array[i] << std::endl;
     }   
     
+
+    std::cout << "**** Doing InsertionSort ****" << std::endl; 
     qobj.sort(new InsertionSort()); 
    
     return 0;
