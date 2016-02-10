@@ -21,7 +21,6 @@ public:
     }
 };
 
-
 int main(int argc, const char * argv[]) {
     int number;
     size_t n=20;
