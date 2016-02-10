@@ -15,12 +15,8 @@ class Sort{
 private:
     Algorithm * obj;
 public:
-    
-    
-    Sort(Algorithm * _obj){
+    void sort(Algorithm * _obj){
         obj = _obj;
-    }
-    void sort(){
         obj->sort();
     }
 };
@@ -38,12 +34,13 @@ int main(int argc, const char * argv[]) {
         my_array.push_back(number);
     }
     
-    Sort qobj(new QuickSort(my_array));
-    
-    qobj.sort();
+    Sort qobj;
+    qobj.sort(new QuickSort(my_array));
     for (int i = 0; i < n; i++) {
         std::cout << "my_array[" << i << "] = " << my_array[i] << std::endl;
-    }
+    }   
     
+    qobj.sort(new InsertionSort()); 
+   
     return 0;
 }
