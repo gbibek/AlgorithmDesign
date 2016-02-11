@@ -38,15 +38,24 @@ int main(int argc, const char * argv[]) {
         number =(rand()%(n)) + 1;
         unsorted_array.push_back(number);
     }
+
     my_array = unsorted_array;
         
     std::cout << "**** Doing QuickSort ****"  << std::endl; 
     qobj.sort(new QuickSort(my_array));
     qobj.printa(my_array); 
 
-    std::cout << "**** Doing InsertionSort ****" << std::endl; 
+    my_array = unsorted_array;
+
+    std::cout<<"**** Merge Sort ****" <<std::endl;
+    qobj.sort(new MergeSort(my_array));
+    qobj.printa(my_array);
+
+    my_array = unsorted_array;
+
+    std::cout << "**** InsertionSort ****" << std::endl; 
     qobj.sort(new InsertionSort(my_array)); 
     qobj.printa(my_array);
+     
     return 0;
-
 }

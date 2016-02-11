@@ -93,4 +93,69 @@ public:
 
 };
 
+
+class MergeSort: public Algorithm{
+public:
+    std::vector<int> &my_array;
+    int length;
+public:
+    
+    MergeSort(std::vector<int> &array):my_array(array){
+        length = (int)my_array.size();
+    }
+    
+    virtual void sort(){
+        i_sort(my_array);
+    }
+    
+    void i_sort(std::vector<int> &array){
+
+        if (array.size() < 2) {
+            return;
+        }
+        std::vector<int>::const_iterator left_first = array.begin();
+        std::vector<int>::const_iterator left_last = array.begin() + (array.size()/2+(array.size()%2));
+        std::vector<int>::const_iterator right_first = array.begin() + (array.size()/2+(array.size()%2));
+        std::vector<int>::const_iterator right_last = array.end();
+        
+        std::vector<int> left(left_first, left_last);
+        std::vector<int> right(right_first, right_last);
+        
+        i_sort(left); // left
+        i_sort(right); // right
+        
+        combine(array,left, right);
+    }
+    
+    void combine(std::vector<int>& array, std::vector<int> left, std::vector<int> right){
+        
+        int j = 0;
+        int k = 0;
+        int i = 0;
+        while((j < right.size() && (k < left.size()))){
+            if ((left[k] >= right[j])){
+                array[i]   = right[j];
+                j++;
+            }
+            else{
+               array[i] = left[k];
+                k++;
+            }
+            i++;
+        }
+        while (j < right.size()) {
+            array[i] = right[j];
+            j++;
+            i++;
+        }
+        while (k < left.size()) {
+            array[i] = left[k];
+            k++;
+            i++;
+        }
+    }
+};
+
+
+
 #endif /* Algorithms_hpp */
