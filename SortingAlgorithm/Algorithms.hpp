@@ -121,8 +121,8 @@ public:
         std::vector<int> left(left_first, left_last);
         std::vector<int> right(right_first, right_last);
         
-        i_sort(left); // left
-        i_sort(right); // right
+        m_sort(left); // left
+        m_sort(right); // right
         
         combine(array,left, right);
     }
