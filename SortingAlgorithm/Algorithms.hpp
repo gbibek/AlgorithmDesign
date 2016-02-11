@@ -105,10 +105,10 @@ public:
     }
     
     virtual void sort(){
-        i_sort(my_array);
+        m_sort(my_array);
     }
     
-    void i_sort(std::vector<int> &array){
+    void m_sort(std::vector<int> &array){
 
         if (array.size() < 2) {
             return;
